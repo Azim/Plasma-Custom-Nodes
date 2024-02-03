@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Reflection;
 using UnityEngine;
 
-namespace PlasmaModding
+namespace PlasmaCustomNodes
 {
     public class CustomAgent: Agent
     {

@@ -3,47 +3,60 @@ using System.Reflection;
 using UnityEngine;
 using Behavior;
 using System.Linq;
+using System.Collections.Generic;
+using System;
+using BepInEx;
+using BepInEx.Logging;
 
-namespace PlasmaModding
+namespace PlasmaCustomNodes
 {
-    public static class CustomNodeManager
+    public class LateGestaltRegistrationException : Exception { }
+    public class InsufficientGestaltDataException : Exception
     {
-        static IEnumerable<AgentGestalt> agentGestalts = Enumerable.Empty<AgentGestalt>();
-        static bool loadedNodeResources = false;
-        static bool awoken = false;
-        static Dictionary<string, AgentCategoryEnum> customCategories = new Dictionary<string, AgentCategoryEnum>();
+        public InsufficientGestaltDataException(string message) : base(message) { }
+    }
+
+    [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
+    public class CustomNodeManager: BaseUnityPlugin
+    {
+        internal static IEnumerable<AgentGestalt> agentGestalts = Enumerable.Empty<AgentGestalt>();
+        internal static bool loadedNodeResources = false;
+        internal static Dictionary<string, AgentCategoryEnum> customCategories = new Dictionary<string, AgentCategoryEnum>();
         private static int highestCategoryId = 3;
-        static Harmony? harmony;
+
         private static int recent_port_dict_id;
 
-        public static void Awake()
-        {
-            if (awoken) return;
-            awoken = true;
 
-            harmony = new Harmony("CustomNodeManager");
+
+        public static ManualLogSource mls;
+
+        private void Awake()
+        {
+            mls = base.Logger;
+            mls.LogInfo("Starting initialization of PlasmaCustomNodes");
+
+            Harmony harmony = new Harmony("CustomNodeManager");
             harmony.PatchAll(Assembly.GetExecutingAssembly());
 
             if (Holder.agentGestalts != null)
             {
                 loadedNodeResources = true;
+                mls.LogInfo("PlasmaCustomNodes initialized too late and will not work properly");
+                this.enabled = false;
+            }
+            else
+            {
+                mls.LogInfo("PlasmaCustomNodes initialized successfully");
             }
         }
-        public class LateGestaltRegistrationException : Exception { }
+
         private static void RegisterGestalt(AgentGestalt gestalt)
         {
-            Awake();
             if (loadedNodeResources)
                 throw new LateGestaltRegistrationException();
             agentGestalts = agentGestalts.Concat(new[] { gestalt });
         }
 
-        public class InsufficientGestaltDataException : Exception
-        {
-            public InsufficientGestaltDataException(string message) : base(message)
-            {
-            }
-        }
 
         public static void CreateNode(AgentGestalt gestalt, string unique_node_name)
         {

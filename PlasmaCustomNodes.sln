@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32421.90
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Plasma-Custom-Nodes", "Plasma-Custom-Nodes\Plasma-Custom-Nodes.csproj", "{DAC6E1CD-B393-4270-BE70-41D358F81063}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlasmaCustomNodes", "PlasmaCustomNodes\PlasmaCustomNodes.csproj", "{DAC6E1CD-B393-4270-BE70-41D358F81063}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
