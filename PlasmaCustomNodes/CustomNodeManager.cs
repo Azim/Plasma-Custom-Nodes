@@ -123,7 +123,10 @@ namespace PlasmaCustomNodes
         public static AgentGestalt.Port CreatePropertyPort(AgentGestalt gestalt, string name, string description, Data.Types datatype = Data.Types.None, bool configurable = true, Data? defaultData = null, string? reference_name = null)
         {
             if (defaultData == null)
+            {
                 defaultData = new Data();
+                defaultData.type = datatype;
+            }
             AgentGestalt.Port port = CreateGenericPort(gestalt, name, description);
             AgentGestalt.Property property = new AgentGestalt.Property();
             int property_dict_id = 1;
@@ -136,6 +139,7 @@ namespace PlasmaCustomNodes
 
             property.position = port.position;
             gestalt.properties.Add(property_dict_id, property);
+
             if (gestalt.agent.IsSubclassOf(typeof(CustomAgent)))
             {
                 if (!CustomAgent.properties.ContainsKey(gestalt.agent))
@@ -145,6 +149,7 @@ namespace PlasmaCustomNodes
                 }
                 CustomAgent.properties[gestalt.agent].Add(reference_name ?? name, property_dict_id);
             }
+
             property.defaultData = defaultData;
             property.configurable = configurable;
             property.name = name;
