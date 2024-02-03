@@ -6,7 +6,7 @@ A library to unify and streamline the process of adding custom nodes into Plasma
 
 1. Create a new class that inherits `PlasmaModding.CustomAgent` [[?]](https://github.com/Plasma-Modding/Plasma-Custom-Nodes/wiki/Writing-a-CustomAgent-class)
 2. Create a gestalt using `PlasmaModding.CustomNodeManager.CreateGestalt`
-3. Add any ports to the gestalt using `PlasmaModding.CustomNodeManager.CreateCommandPort`, `PlasmaModding.CustomNodeManager.CreatePropertyPort` and `PlasmaModding.CustomNodeManager.CreateNode`
+3. Add any ports to the gestalt using `PlasmaModding.CustomNodeManager.CreateCommandPort`, `PlasmaModding.CustomNodeManager.CreatePropertyPort` and `PlasmaModding.CustomNodeManager.CreateOutputPort`
 4. Create the node from the gestalt using `PlasmaModding.CustomNodeManager.CreateNode`
 
 # `PlasmaModding.CustomNodeManager`
