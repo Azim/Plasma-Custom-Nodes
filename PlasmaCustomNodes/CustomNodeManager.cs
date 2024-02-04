@@ -164,13 +164,16 @@ namespace PlasmaCustomNodes
 
         private static int GetHighestKey(Dictionary<int, AgentGestalt.Port> l)
         {
-            return l.Keys.OrderBy(b => b).Last(); 
+            return l.Keys.OrderBy(b => b).DefaultIfEmpty(1).LastOrDefault();
         }
 
         public static AgentGestalt.Port CreateOutputPort(AgentGestalt gestalt, string name, string description, Data.Types datatype = Data.Types.None, bool configurable = true, Data? defaultData = null, string? reference_name = null)
         {
             if (defaultData == null)
+            {
                 defaultData = new Data();
+                defaultData.type = datatype;
+            }
             AgentGestalt.Port port = CreateGenericPort(gestalt, name, description);
             AgentGestalt.Property property = new AgentGestalt.Property();
             int property_dict_id = 1;
@@ -206,7 +209,7 @@ namespace PlasmaCustomNodes
             if (customCategories.ContainsKey(name))
                 return customCategories[name];
             customCategories.Add(name, (AgentCategoryEnum)(++highestCategoryId));
-            return (AgentCategoryEnum) highestCategoryId;
+            return customCategories[name];
         }
 
         [HarmonyPatch(typeof(Resources), "LoadAll", new Type[] { typeof(string), typeof(Type) })]
