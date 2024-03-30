@@ -3,12 +3,12 @@
 
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
-        <AssemblyName>PlasmaCustomNodes</AssemblyName>
-        <Description>PlasmaCustomNodes</Description>
+        <AssemblyName>PlasmaCustomAgents</AssemblyName>
+        <Description>PlasmaCustomAgents</Description>
         <Version>1.0.0</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
-        <RootNamespace>PlasmaCustomNodes</RootNamespace>
+        <RootNamespace>PlasmaCustomAgents</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

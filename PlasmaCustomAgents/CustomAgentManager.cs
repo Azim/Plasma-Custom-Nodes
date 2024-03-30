@@ -8,7 +8,7 @@ using System;
 using BepInEx;
 using BepInEx.Logging;
 
-namespace PlasmaCustomNodes
+namespace PlasmaCustomAgents
 {
     public class LateGestaltRegistrationException : Exception { }
     public class InsufficientGestaltDataException : Exception
@@ -17,15 +17,13 @@ namespace PlasmaCustomNodes
     }
 
     [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
-    public class CustomNodeManager: BaseUnityPlugin
+    public class CustomAgentManager: BaseUnityPlugin
     {
         internal static IEnumerable<AgentGestalt> agentGestalts = Enumerable.Empty<AgentGestalt>();
-        internal static bool loadedNodeResources = false;
-        internal static Dictionary<string, AgentCategoryEnum> customCategories = new Dictionary<string, AgentCategoryEnum>();
-        private static int highestCategoryId = 3;
+        internal static bool loadedResources = false;
 
-        private static int recent_port_dict_id;
-
+        internal static Dictionary<string, AgentCategoryEnum> customNodeCategories = new Dictionary<string, AgentCategoryEnum>();
+        private static int highestNodeCategoryId = 3;
 
 
         public static ManualLogSource mls;
@@ -33,45 +31,60 @@ namespace PlasmaCustomNodes
         private void Awake()
         {
             mls = base.Logger;
-            mls.LogInfo("Starting initialization of PlasmaCustomNodes");
+            mls.LogInfo("Starting initialization of PlasmaCustomAgents");
 
-            Harmony harmony = new Harmony("CustomNodeManager");
+            Harmony harmony = new Harmony("CustomAgentManager");
             harmony.PatchAll(Assembly.GetExecutingAssembly());
 
             if (Holder.agentGestalts != null)
             {
-                loadedNodeResources = true;
-                mls.LogInfo("PlasmaCustomNodes initialized too late and will not work properly");
+                loadedResources = true;
+                mls.LogInfo("PlasmaCustomAgents initialized too late and will not work properly");
                 this.enabled = false;
             }
             else
             {
-                mls.LogInfo("PlasmaCustomNodes initialized successfully");
+                mls.LogInfo("PlasmaCustomAgents initialized successfully");
             }
         }
 
-        private static void RegisterGestalt(AgentGestalt gestalt)
+        public static void RegisterGestalt(AgentGestalt gestalt, string unique_name)
         {
-            if (loadedNodeResources)
+            if (loadedResources)
                 throw new LateGestaltRegistrationException();
+
+            gestalt.id = (AgentGestaltEnum)unique_name.GetHashCode() + 1000;
             agentGestalts = agentGestalts.Concat(new[] { gestalt });
         }
 
 
-        public static void CreateNode(AgentGestalt gestalt, string unique_node_name)
+        public static AgentGestalt CreateComponentGestalt(GameObject prefab, 
+            string displayName, 
+            string description = null, 
+            AgentGestalt.ComponentCategories category = AgentGestalt.ComponentCategories.Decorative)
         {
-            gestalt.id = (AgentGestaltEnum)unique_node_name.GetHashCode() + 1000;
-            if (gestalt.agent == null)
-                throw new InsufficientGestaltDataException("No agent attached to gestalt");
-            if (gestalt.displayName == null)
-                throw new InsufficientGestaltDataException("Node should have a display name");
-            if (gestalt.properties == null)
-                gestalt.properties = new Dictionary<int, AgentGestalt.Property>();
-            if (gestalt.ports == null)
-                gestalt.ports = new Dictionary<int, AgentGestalt.Port>();
-            RegisterGestalt(gestalt);
+            AgentGestalt gestalt = (AgentGestalt)ScriptableObject.CreateInstance(typeof(AgentGestalt));
+            gestalt.componentCategory = category;
+            gestalt.properties = new Dictionary<int, AgentGestalt.Property>();
+            gestalt.ports = new Dictionary<int, AgentGestalt.Port>();
+            gestalt.type = AgentGestalt.Types.Component;
+            gestalt.componentPrefab = prefab;
+
+            gestalt.agent = null;
+            gestalt.displayName = displayName;
+            gestalt.description = description??"";
+            gestalt.nodeCategory = AgentCategoryEnum.Misc;
+
+            gestalt.componentScaleXLimits = new FloatRange(1, 1);
+            gestalt.componentScaleYLimits = new FloatRange(1, 1);
+            gestalt.componentScaleZLimits = new FloatRange(1, 1);
+            return gestalt;
         }
-        public static AgentGestalt CreateGestalt(Type agent, string displayName, string? description = null, AgentCategoryEnum category = AgentCategoryEnum.Misc)
+
+        public static AgentGestalt CreateNodeGestalt(Type agent, 
+            string displayName, 
+            string description = null, 
+            AgentCategoryEnum category = AgentCategoryEnum.Misc)
         {
             AgentGestalt gestalt = (AgentGestalt)ScriptableObject.CreateInstance(typeof(AgentGestalt));
             gestalt.componentCategory = AgentGestalt.ComponentCategories.Behavior;
@@ -81,12 +94,12 @@ namespace PlasmaCustomNodes
 
             gestalt.agent = agent;
             gestalt.displayName = displayName;
-            gestalt.description = description;
+            gestalt.description = description??"";
             gestalt.nodeCategory = category;
 
             return gestalt;
         }
-        private static AgentGestalt.Port CreateGenericPort(AgentGestalt gestalt, string name, string description)
+        private static AgentGestalt.Port CreateGenericPort(AgentGestalt gestalt, string name, string description, out int recent_port_dict_id)
         {
             AgentGestalt.Port port = new AgentGestalt.Port();
             int port_dict_id = 1;
@@ -114,27 +127,27 @@ namespace PlasmaCustomNodes
 
         public static AgentGestalt.Port CreateCommandPort(AgentGestalt gestalt, string name, string description, int operation)
         {
-            AgentGestalt.Port port = CreateGenericPort(gestalt, name, description);
+            AgentGestalt.Port port = CreateGenericPort(gestalt, name, description, out _);
             port.operation = operation;
             port.type = AgentGestalt.Port.Types.Command;
             return port;
         }
 
-        public static AgentGestalt.Port CreatePropertyPort(AgentGestalt gestalt, string name, string description, Data.Types datatype = Data.Types.None, bool configurable = true, Data? defaultData = null, string? reference_name = null)
+        public static AgentGestalt.Port CreatePropertyPort(AgentGestalt gestalt, string name, string description, Data.Types datatype = Data.Types.None, bool configurable = true, Data defaultData = null, string reference_name = null)
         {
             if (defaultData == null)
             {
                 defaultData = new Data();
                 defaultData.type = datatype;
             }
-            AgentGestalt.Port port = CreateGenericPort(gestalt, name, description);
+            AgentGestalt.Port port = CreateGenericPort(gestalt, name, description, out _);
             AgentGestalt.Property property = new AgentGestalt.Property();
             int property_dict_id = 1;
             try
             {
                 property_dict_id = GetHighestKey(gestalt.ports) + 1;
             }
-            catch (Exception e) { }
+            catch (Exception) { }
 
 
             property.position = port.position;
@@ -167,14 +180,14 @@ namespace PlasmaCustomNodes
             return l.Keys.OrderBy(b => b).DefaultIfEmpty(1).LastOrDefault();
         }
 
-        public static AgentGestalt.Port CreateOutputPort(AgentGestalt gestalt, string name, string description, Data.Types datatype = Data.Types.None, bool configurable = true, Data? defaultData = null, string? reference_name = null)
+        public static AgentGestalt.Port CreateOutputPort(AgentGestalt gestalt, string name, string description, Data.Types datatype = Data.Types.None, bool configurable = true, Data defaultData = null, string reference_name = null)
         {
             if (defaultData == null)
             {
                 defaultData = new Data();
                 defaultData.type = datatype;
             }
-            AgentGestalt.Port port = CreateGenericPort(gestalt, name, description);
+            AgentGestalt.Port port = CreateGenericPort(gestalt, name, description, out int recent_port_dict_id);
             AgentGestalt.Property property = new AgentGestalt.Property();
             int property_dict_id = 1;
             try
@@ -182,6 +195,7 @@ namespace PlasmaCustomNodes
                 property_dict_id = GetHighestKey(gestalt.ports) + 1;
             }
             catch (Exception) { }
+
             property.position = port.position;
             gestalt.properties.Add(property_dict_id, property);
             if (gestalt.agent.IsSubclassOf(typeof(CustomAgent)))
@@ -203,21 +217,24 @@ namespace PlasmaCustomNodes
             return port;
         }
 
-        public static AgentCategoryEnum CustomCategory(string name)
+        public static AgentCategoryEnum CustomNodeCategory(string name)
         {
             name = name.ToUpperInvariant();
-            if (customCategories.ContainsKey(name))
-                return customCategories[name];
-            customCategories.Add(name, (AgentCategoryEnum)(++highestCategoryId));
-            return customCategories[name];
+            if (customNodeCategories.ContainsKey(name))
+                return customNodeCategories[name];
+
+            customNodeCategories.Add(name, (AgentCategoryEnum)(++highestNodeCategoryId));
+            return customNodeCategories[name];
         }
+
+
 
         [HarmonyPatch(typeof(Resources), "LoadAll", new Type[] { typeof(string), typeof(Type) })]
         private class LoadResourcesPatch
         {
             public static void Postfix(string path, Type systemTypeInstance, ref UnityEngine.Object[] __result)
             {
-                if (path == "Gestalts/Logic Agents" && systemTypeInstance == typeof(AgentGestalt) && !loadedNodeResources)
+                if (path == "Gestalts/Logic Agents" && systemTypeInstance == typeof(AgentGestalt) && !loadedResources)
                 {   
                     int size = __result.Length;
                     int newSize = size + agentGestalts.Count();
@@ -225,7 +242,7 @@ namespace PlasmaCustomNodes
                     __result.CopyTo(temp, 0);
                     agentGestalts.ToArray().CopyTo(temp, size);
                     __result = temp;
-                    loadedNodeResources = true;
+                    loadedResources = true;
                 }
             }
         }
@@ -236,12 +253,12 @@ namespace PlasmaCustomNodes
             static int applied = 0;
             public static void Prefix()
             {
-                if (Holder.instance.agentCategories != null && applied < customCategories.Count())
-                    foreach (string categoryName in customCategories.Keys)
+                if (Holder.instance.agentCategories != null && applied < customNodeCategories.Count())
+                    foreach (string categoryName in customNodeCategories.Keys)
                     {
-                        if (!Holder.instance.agentCategories.ContainsKey(customCategories[categoryName])){
+                        if (!Holder.instance.agentCategories.ContainsKey(customNodeCategories[categoryName])){
                             applied++;
-                            Holder.instance.agentCategories.Add(customCategories[categoryName], categoryName);
+                            Holder.instance.agentCategories.Add(customNodeCategories[categoryName], categoryName);
                         }
                     }
             }
@@ -254,7 +271,7 @@ namespace PlasmaCustomNodes
             {
                 if (enumType == typeof(AgentCategoryEnum))
                 {
-                    string[] tabs = customCategories.Keys.ToArray();
+                    string[] tabs = customNodeCategories.Keys.ToArray();
                     string[] names = new string[__result.Length + tabs.Length];
                     __result.CopyTo(names, 0);
                     tabs.CopyTo(names, __result.Length);
@@ -268,7 +285,7 @@ namespace PlasmaCustomNodes
         {
             public static void Postfix(System.Type enumType, string value, ref object parseResult, ref bool __result)
             {
-                if (!__result && enumType == typeof(AgentCategoryEnum) && customCategories.ContainsKey(value))
+                if (!__result && enumType == typeof(AgentCategoryEnum) && customNodeCategories.ContainsKey(value))
                 {
                     __result = true;
                     System.Type EnumResult = typeof(System.Enum).GetNestedType("EnumResult", BindingFlags.NonPublic);
@@ -276,7 +293,7 @@ namespace PlasmaCustomNodes
                     FieldInfo parsedEnum = EnumResult.GetField("parsedEnum", BindingFlags.NonPublic | BindingFlags.Instance);
                     var presult = System.Convert.ChangeType(System.Activator.CreateInstance(EnumResult), EnumResult);
                     Init.Invoke(presult, new object[] { false });
-                    parsedEnum.SetValue(presult, customCategories[value]);
+                    parsedEnum.SetValue(presult, customNodeCategories[value]);
                     parseResult = presult;
                 }
             }
