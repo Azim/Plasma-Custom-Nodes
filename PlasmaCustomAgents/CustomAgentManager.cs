@@ -11,10 +11,6 @@ using BepInEx.Logging;
 namespace PlasmaCustomAgents
 {
     public class LateGestaltRegistrationException : Exception { }
-    public class InsufficientGestaltDataException : Exception
-    {
-        public InsufficientGestaltDataException(string message) : base(message) { }
-    }
 
     [BepInPlugin(PluginInfo.PLUGIN_GUID, PluginInfo.PLUGIN_NAME, PluginInfo.PLUGIN_VERSION)]
     public class CustomAgentManager: BaseUnityPlugin

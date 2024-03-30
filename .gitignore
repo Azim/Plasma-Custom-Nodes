@@ -35,7 +35,8 @@ bld/
 
 publish/README.md
 publish/LICENSE.md
-
+*.dll
+*.zip
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
@@ -179,9 +180,6 @@ DocProject/Help/*.hhk
 DocProject/Help/*.hhp
 DocProject/Help/Html2
 DocProject/Help/html
-
-# Click-Once directory
-publish/
 
 # Publish Web Output
 *.[Pp]ublish.xml
