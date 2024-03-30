@@ -5,7 +5,7 @@
         <TargetFramework>netstandard2.1</TargetFramework>
         <AssemblyName>PlasmaCustomAgents</AssemblyName>
         <Description>PlasmaCustomAgents</Description>
-        <Version>1.0.0</Version>
+        <Version>1.0.1</Version>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
         <LangVersion>latest</LangVersion>
         <RootNamespace>PlasmaCustomAgents</RootNamespace>

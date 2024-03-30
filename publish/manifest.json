@@ -1,6 +1,6 @@
 {
     "name": "PlasmaCustomAgents",
-    "version_number": "1.0.0",
+    "version_number": "1.0.1",
 	"website_url":"https://github.com/Azim/PlasmaCustomAgents",
     "description": "A library to unify and streamline the process of adding custom nodes and components into Plasma",
     "dependencies": [
